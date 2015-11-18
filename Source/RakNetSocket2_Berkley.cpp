@@ -81,6 +81,16 @@ void RNS2_Berkley::SetDoNotFragment( int opt )
 
 void RNS2_Berkley::GetSystemAddressIPV4 ( RNS2Socket rns2Socket, SystemAddress *systemAddressOut )
 {
+	// A connected socket is required to get the true ip address
+	// Otherwise, we only get the port we are bound on
+	// Connect to the public google DNS server
+	sockaddr_in saGoogle;
+	memset(&saGoogle,0,sizeof(sockaddr_in));
+	saGoogle.sin_family = AF_INET;
+	saGoogle.sin_addr.s_addr=inet_addr__("8.8.8.8");
+	saGoogle.sin_port = htons(53);
+	connect__(rns2Socket, (const sockaddr*) &saGoogle, sizeof(saGoogle));
+
 	sockaddr_in sa;
 	memset(&sa,0,sizeof(sockaddr_in));
 	socklen_t len = sizeof(sa);
@@ -99,6 +109,10 @@ void RNS2_Berkley::GetSystemAddressIPV4 ( RNS2Socket rns2Socket, SystemAddress *
 			systemAddressOut->address.addr4.sin_addr.s_addr=inet_addr__("127.0.0.1");
 
 	}
+
+	// Disconnect the socket after getting the address
+	memset(&saGoogle,0,sizeof(sockaddr_in));
+	connect__(rns2Socket, (const sockaddr*) &saGoogle, sizeof(saGoogle));
 }
 void RNS2_Berkley::GetSystemAddressIPV4And6 ( RNS2Socket rns2Socket, SystemAddress *systemAddressOut )
 {
