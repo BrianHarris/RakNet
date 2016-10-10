@@ -162,6 +162,7 @@
 #define SHA1_WIPE_VARIABLES
 #endif
 
+#ifdef SHA1_UTILITY_FUNCTIONS
 #if defined(SHA1_HAS_TCHAR)
 #include <tchar.h>
 #else
@@ -181,6 +182,7 @@
 #define _tcscpy strcpy
 #define _tcscat strcat
 #define _sntprintf snprintf
+#endif
 #endif
 #endif
 #endif
@@ -226,12 +228,6 @@
 
 ///////////////////////////////////////////////////////////////////////////
 // Declare SHA-1 workspace
-
-typedef union
-{
-	UINT_8 c[64];
-	UINT_32 l[16];
-} SHA1_WORKSPACE_BLOCK;
 
 class RAK_DLL_EXPORT CSHA1
 {
@@ -293,6 +289,12 @@ private:
 	UINT_8 m_buffer[64];
 	UINT_8 m_digest[20];
 	UINT_32 m_reserved1[3]; // Memory alignment padding
+
+	typedef union
+	{
+		UINT_8 c[64];
+		UINT_32 l[16];
+	} SHA1_WORKSPACE_BLOCK;
 
 	UINT_8 m_workspace[64];
 	SHA1_WORKSPACE_BLOCK* m_block; // SHA1 pointer to the byte array above

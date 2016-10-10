@@ -27,6 +27,9 @@ static const CCTimeType SYN=10000;
 #include "RakAssert.h"
 #include "RakAlloca.h"
 
+// NVIDIA : Sheikh - Fix for VS2015
+#include <cmath>
+
 using namespace RakNet;
 
 // ****************************************************** PUBLIC METHODS ******************************************************
