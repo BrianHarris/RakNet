@@ -173,6 +173,9 @@ void UDPProxyServer::OnForwardingRequestFromCoordinatorToServer(Packet *packet)
 	outgoingBs.Write((unsigned char) success);
 	outgoingBs.Write(forwardingPort);
 	rakPeerInterface->Send(&outgoingBs, MEDIUM_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+
+	if (resultHandler)
+		resultHandler->OnNewForward(success, sourceAddress, targetAddress, forwardingPort, this);
 }
 
 #endif // _RAKNET_SUPPORT_*

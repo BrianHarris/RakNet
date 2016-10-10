@@ -56,6 +56,9 @@ struct UDPProxyServerResultHandler
 	/// \param[out] usedPassword The password we passed to UDPProxyServer::LoginToCoordinator()
 	/// \param[out] proxyServer The plugin calling this callback
 	virtual void OnWrongPassword(RakNet::RakString usedPassword, RakNet::UDPProxyServer *proxyServerPlugin)=0;
+
+	// Called when the coordinator requests that we start forwarding
+	virtual void OnNewForward(RakNet::UDPForwarderResult result, const RakNet::SystemAddress & sourceAddress, const RakNet::SystemAddress & targetAddress, unsigned short localPort, RakNet::UDPProxyServer *proxyServerPlugin) = 0;
 };
 
 /// \brief UDPProxyServer to control our instance of UDPForwarder
