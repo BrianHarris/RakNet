@@ -762,13 +762,11 @@ void FullyConnectedMesh2::ConnectToRemoteNewIncomingConnections(Packet *packet)
 	bsIn.Read(count);
 	SystemAddress remoteAddress;
 	RakNetGUID remoteGuid;
-	char str[64];
 	for (unsigned int i=0; i < count; i++)
 	{
 		bsIn.Read(remoteAddress);
 		bsIn.Read(remoteGuid);
-		remoteAddress.ToString(false,str);
-		rakPeerInterface->Connect(str,remoteAddress.GetPort(),connectionPassword.C_String(),(int) connectionPassword.GetLength());
+		rakPeerInterface->Connect(remoteAddress,connectionPassword.C_String(),(int) connectionPassword.GetLength());
 	}
 }
 unsigned int FullyConnectedMesh2::GetTotalConnectionCount(void) const
