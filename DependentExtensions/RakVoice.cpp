@@ -48,8 +48,10 @@ RakVoice::RakVoice()
 	defaultEncoderComplexity=2;
 	defaultVADState=true;
 	defaultDENOISEState=false;
+	defaultAGCState=false;
 	defaultVBRState=false;
 	loopbackMode=false;
+	bufferedOutputSender=UNASSIGNED_RAKNET_GUID;
 }
 RakVoice::~RakVoice()
 {
@@ -67,7 +69,7 @@ void RakVoice::Init(unsigned short sampleRate, unsigned bufferSizeBytes)
 	for (i=0; i < bufferedOutputCount; i++)
 		bufferedOutput[i]=0.0f;
 	zeroBufferedOutput=false;
-
+	bufferedOutputSender=UNASSIGNED_RAKNET_GUID;
 }
 void RakVoice::Deinit(void)
 {
@@ -76,6 +78,7 @@ void RakVoice::Deinit(void)
 	{
 		rakFree_Ex(bufferedOutput, _FILE_AND_LINE_ );
 		bufferedOutput = 0;
+		bufferedOutputSender = UNASSIGNED_RAKNET_GUID;
 		CloseAllChannels();
 	}
 }
@@ -206,7 +209,7 @@ bool RakVoice::IsSendingVoiceDataTo(RakNetGUID recipient)
 		return voiceChannels[index]->isSendingVoiceData;
 	return false;
 }
-void RakVoice::ReceiveFrame(void *outputBuffer)
+void RakVoice::ReceiveFrame(void *outputBuffer, RakNetGUID &SenderGuid)
 {
 	short *out = (short*)outputBuffer;
 	unsigned i;
@@ -220,7 +223,8 @@ void RakVoice::ReceiveFrame(void *outputBuffer)
 		else
 			out[i]=(short)bufferedOutput[i];
 	}
-
+	SenderGuid = bufferedOutputSender;
+	bufferedOutputSender = UNASSIGNED_RAKNET_GUID;
 	// Done with this block.  Zero all the values in Update
 	zeroBufferedOutput=true;
 }
@@ -442,7 +446,7 @@ void RakVoice::Update(void)
 					int is_speech=1;
 
 					// Run preprocessor if required
-					if (defaultDENOISEState||defaultVADState){
+					if (defaultDENOISEState||defaultVADState||defaultAGCState){
 						is_speech=speex_preprocess((SpeexPreprocessState*)channel->pre_state,(spx_int16_t*) inputBuffer, NULL );
 					}
 
@@ -544,6 +548,8 @@ printf("%i ", voicePacketsSent++);
 					// It will be clamped at the end
 					bufferedOutput[j]+=in[j%(totalBufferSize/SAMPLESIZE)];
 				}
+
+				bufferedOutputSender = channel->guid;
 
 				// Update the read index.  Always update by bufferSizeBytes, not bytesWaitingToReturn.
 				// if bytesWaitingToReturn < bufferSizeBytes then the rest is silence since this means the buffer ran out or we stopped sending.
@@ -677,6 +683,7 @@ void RakVoice::OpenChannel(Packet *packet)
 	SetEncoderParameter(channel->enc_state, SPEEX_SET_COMPLEXITY, defaultEncoderComplexity);
 	// Set preprocessor default parameters
 	SetPreprocessorParameter(channel->pre_state, SPEEX_PREPROCESS_SET_DENOISE, (defaultDENOISEState) ? 1 : 2);
+	SetPreprocessorParameter(channel->pre_state, SPEEX_PREPROCESS_SET_AGC, (defaultAGCState) ? 1 : 2);
 	SetPreprocessorParameter(channel->pre_state, SPEEX_PREPROCESS_SET_VAD, (defaultVADState) ? 1 : 2);
 
 	voiceChannels.Insert(packet->guid, channel, true, _FILE_AND_LINE_);
@@ -731,6 +738,11 @@ void RakVoice::SetNoiseFilter(bool enable)
 	SetPreprocessorParameter(NULL, SPEEX_PREPROCESS_SET_DENOISE, (enable) ? 1 : 2);
 	defaultDENOISEState = enable;
 }
+void RakVoice::SetAGC(bool enable)
+{
+	SetPreprocessorParameter(NULL, SPEEX_PREPROCESS_SET_AGC, (enable) ? 1 : 2);
+	defaultAGCState = enable;
+}
 void RakVoice::SetVBR(bool enable)
 {
 	SetEncoderParameter(NULL, SPEEX_SET_VBR, (enable) ? 1 : 0);
@@ -748,6 +760,10 @@ bool RakVoice::IsVADActive(void)
 bool RakVoice::IsNoiseFilterActive()
 {
 	return defaultDENOISEState;
+}
+bool RakVoice::IsAGCActive()
+{
+	return defaultAGCState;
 }
 bool RakVoice::IsVBRActive()
 {
@@ -854,7 +870,6 @@ void RakVoice::OnVoiceData(Packet *packet)
 			*/
 		}
 #endif
-
 		// Write to buffer
 		WriteOutputToChannel(channel, tempOutput);
 
@@ -902,5 +917,15 @@ void RakVoice::WriteOutputToChannel(VoiceChannel *channel, char *dataToWrite)
 		channel->incomingReadIndex+=bufferSizeBytes;
 		if (channel->incomingReadIndex==totalBufferSize)
 			channel->incomingReadIndex=0;
+	}
+}
+
+void RakVoice::GetChannelList(DataStructures::List<RakNetGUID> &guids) const
+{
+	guids.Clear(false, _FILE_AND_LINE_);
+
+	for (unsigned i = 0; i < voiceChannels.Size(); i++)
+	{
+		guids.Push((voiceChannels[i])->guid, _FILE_AND_LINE_);
 	}
 }

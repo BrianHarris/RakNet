@@ -92,6 +92,11 @@ public:
 	/// \param[in] enable true to enable, false to disable.
 	void SetNoiseFilter(bool enable);
 
+	/// \brief Enables or disables automatic gain control
+	/// \pre Only applies to encoder.
+	/// \param[in] enable true to enable, false to disable.
+	void SetAGC(bool enable);
+
 	/// \brief Enables or disables VBR
 	/// VBR is variable bitrate. Uses less bandwidth but more CPU if on.
 	/// \pre Only applies to encoder.
@@ -112,6 +117,11 @@ public:
 	/// \pre Only applies to encoder.
 	/// \return true if the noise filter is active, false otherwise.
 	bool IsNoiseFilterActive();
+
+	/// \brief Returns the current state of automatic gain control
+	/// \pre Only applies to encoder.
+	/// \return true if the noise filter is active, false otherwise.
+	bool IsAGCActive();
 
 	/// \brief Returns the current state of VBR
 	/// \pre Only applies to encoder.
@@ -148,7 +158,7 @@ public:
 
 	/// \brief Gets decoded voice data, from one or more remote senders
 	/// \param[out] outputBuffer The voice data.  The size of outputBuffer should be what was specified as bufferSizeBytes in Init
-	void ReceiveFrame(void *outputBuffer);
+	void ReceiveFrame(void *outputBuffer, RakNetGUID &SenderGuid);
 
 	/// Returns the value sample rate, as passed to Init
 	/// \return the sample rate
@@ -186,6 +196,8 @@ public:
 	/// \return true if enabled, false otherwise.
 	bool IsLoopbackMode(void) const;
 
+	void GetChannelList(DataStructures::List<RakNetGUID> &guids) const;
+
 	// --------------------------------------------------------------------------------------------
 	// Message handling functions
 	// --------------------------------------------------------------------------------------------
@@ -213,8 +225,10 @@ protected:
 	int defaultEncoderComplexity;
 	bool defaultVADState;
 	bool defaultDENOISEState;
+	bool defaultAGCState;
 	bool defaultVBRState;
 	bool loopbackMode;
+	RakNetGUID bufferedOutputSender;
 
 };
 
