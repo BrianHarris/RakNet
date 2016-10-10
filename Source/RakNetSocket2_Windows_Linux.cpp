@@ -69,36 +69,40 @@ void GetMyIP_Windows_Linux_IPV4And6( SystemAddress addresses[MAXIMUM_NUMBER_OF_I
 #endif
 void GetMyIP_Windows_Linux_IPV4( SystemAddress addresses[MAXIMUM_NUMBER_OF_INTERNAL_IDS] )
 {
+	int idx = 0;
 
-
-
-	int idx=0;
-	char ac[ 80 ];
-	int err = gethostname( ac, sizeof( ac ) );
-    (void) err;
-	RakAssert(err != -1);
-	
-	struct hostent *phe = gethostbyname( ac );
-
-	if ( phe == 0 )
+	int rns2Socket = socket__(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (rns2Socket >= 0)
 	{
-		RakAssert(phe!=0);
-		return ;
-	}
-	for ( idx = 0; idx < MAXIMUM_NUMBER_OF_INTERNAL_IDS; ++idx )
-	{
-		if (phe->h_addr_list[ idx ] == 0)
-			break;
+		// A connected socket is required to get the true ip address
+		// otherwise we are likely to just get 127.0.0.1
+		// Connect to the public google DNS server
+		sockaddr_in saGoogle;
+		memset(&saGoogle,0,sizeof(sockaddr_in));
+		saGoogle.sin_family = AF_INET;
+		saGoogle.sin_addr.s_addr=inet_addr__("8.8.8.8");
+		saGoogle.sin_port = htons(53);
+		connect__(rns2Socket, (const sockaddr*) &saGoogle, sizeof(saGoogle));
 
-		memcpy(&addresses[idx].address.addr4.sin_addr,phe->h_addr_list[ idx ],sizeof(struct in_addr));
+		sockaddr_in sa;
+		memset(&sa,0,sizeof(sockaddr_in));
+		socklen_t len = sizeof(sa);
+		getsockname__(rns2Socket, (sockaddr*)&sa, &len);
+
+		addresses[idx].address.addr4.sin_addr.s_addr=sa.sin_addr.s_addr;
+		idx++;
+
+		// Disconnect the socket after getting the address
+		memset(&saGoogle,0,sizeof(sockaddr_in));
+		connect__(rns2Socket, (const sockaddr*) &saGoogle, sizeof(saGoogle));
+		closesocket__(rns2Socket);
 	}
-	
+
 	while (idx < MAXIMUM_NUMBER_OF_INTERNAL_IDS)
 	{
 		addresses[idx]=UNASSIGNED_SYSTEM_ADDRESS;
 		idx++;
 	}
-
 }
 
 #endif // RAKNET_SUPPORT_IPV6==1
