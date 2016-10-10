@@ -20,10 +20,6 @@
 #include "GetTime.h"
 #include "UDPForwarder.h"
 
-// Larger than the client version
-static const int DEFAULT_CLIENT_UNRESPONSIVE_PING_TIME=2000;
-static const int DEFAULT_UNRESPONSIVE_PING_TIME_COORDINATOR=DEFAULT_CLIENT_UNRESPONSIVE_PING_TIME+1000;
-
 using namespace RakNet;
 
 // bool operator<( const DataStructures::MLKeyRef<unsigned short> &inputKey, const UDPProxyCoordinator::ServerWithPing &cls ) {return inputKey.Get() < cls.ping;}
