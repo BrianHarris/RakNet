@@ -14,7 +14,7 @@
 #include "Export.h"
 #include "NativeTypes.h"
 #include "WindowsIncludes.h"
-#if defined(ANDROID) || defined(__S3E__) || defined(__APPLE__)
+#if defined(__S3E__) || defined(__APPLE__)
 // __sync_fetch_and_add not supported apparently
 #include "SimpleMutex.h"
 #endif
@@ -36,7 +36,7 @@ public:
 protected:
 #ifdef _WIN32
 	volatile LONG value;
-#elif defined(ANDROID) || defined(__S3E__) || defined(__APPLE__)
+#elif defined(__S3E__) || defined(__APPLE__)
 	// __sync_fetch_and_add not supported apparently
 	SimpleMutex mutex;
 	uint32_t value;

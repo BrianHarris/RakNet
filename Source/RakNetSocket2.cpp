@@ -410,10 +410,6 @@ int RNS2_Berkley::CreateRecvPollingThread(int threadPriority)
 void RNS2_Berkley::SignalStopRecvPollingThread(void)
 {
 	endThreads=true;
-}
-void RNS2_Berkley::BlockOnStopRecvPollingThread(void)
-{
-	endThreads=true;
 
 	// Get recvfrom to unblock
 	RNS2_SendParameters bsp;
@@ -421,14 +417,15 @@ void RNS2_Berkley::BlockOnStopRecvPollingThread(void)
 	bsp.data=(char*) &zero;
 	bsp.length=4;
 	bsp.systemAddress=boundAddress;
+	bsp.systemAddress.SetToLoopback();
 	bsp.ttl=0;
 	Send(&bsp, _FILE_AND_LINE_);
-
-	RakNet::TimeMS timeout = RakNet::GetTimeMS()+1000;
-	while ( isRecvFromLoopThreadActive.GetValue()>0 && RakNet::GetTimeMS()<timeout )
+}
+void RNS2_Berkley::BlockOnStopRecvPollingThread(void)
+{
+	while ( isRecvFromLoopThreadActive.GetValue()>0 )
 	{
-		// Get recvfrom to unblock
-		Send(&bsp, _FILE_AND_LINE_);
+		SignalStopRecvPollingThread();
 		RakSleep(30);
 	}
 }
